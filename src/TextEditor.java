@@ -17,24 +17,25 @@ public class TextEditor {
     private JFrame frame;
     // private JTextArea textArea; , change to JTextPane (better for Rich Text Format)
     private JTextPane textArea;
-    private StyledDocument doc; // no need to initial like an object, can use doc = textPane.getStyleDocument(); right away
-    private JLabel lbInfo;
-    private File currentFile; // to store the file path 
-    private JPanel topPanel;
-    private JPanel pnSouth;
-    private JToolBar toolBar;
+    private StyledDocument doc; // no need to initial like an object, can use it right away ex. doc = textPane.getStyleDocument();
+    private JPanel southPanel;
+    private JLabel lbInfo; // be added in southPanel
     private JLabel lbCursorPos;
-    private UndoManager undoManager = new UndoManager(); // can create an object already, since the object remains itself (no furthur customization)
+    private File currentFile; // to store the file path and be displayed in lbInfo
+    private JPanel northPanel;
+    private JToolBar toolBar;
+    private UndoManager undoManager = new UndoManager(); // can create an object already, since the object remains itself (no further customization)
     private JComboBox<String> fontCombo;
     private JComboBox<Integer> sizeCombo;
     private JButton colorBtn;
     private boolean isUpdatingStyle = false;
 
+
     /*
-     * These instances are private, can be accessed within this class only
-     * When we create a new element within this class
-     * We write only -> frame = new JFrame("Designbeispiel");
-     * Instead of -> JFrame frame = new JFrame("Designbeispiel");
+     * These instances above are private, can be accessed within this class only
+     * When we create a new instance within this class
+     * We write only -> frame = new JFrame("Title");
+     * Instead of -> JFrame frame = new JFrame("Title");
      */
 
     // ### Constructor - Constructor has the same name as Class, no return 
@@ -49,28 +50,24 @@ public class TextEditor {
         JMenuBar mnHauptmenue = new JMenuBar();
         frame.setJMenuBar(mnHauptmenue);
 
-        // Top Panel
-        // topPanel = new JPanel(new BorderLayout());
-        // topPanel.setPreferredSize(new Dimension(800, 80)); 
-        // frame.add(topPanel, BorderLayout.NORTH);
-
-
         // Tool Bar
         toolBar = new JToolBar();
-
         toolBar.setLayout(new FlowLayout(FlowLayout.LEFT));
         //toolBar.setLayout(new FlowLayout(FlowLayout.LEFT));
         toolBar.setFloatable(false);
 
-        topPanel = new JPanel();
-        //topPanel.setPreferredSize(new Dimension(800,70));
+        northPanel = new JPanel();
+        northPanel.setLayout(new FlowLayout(FlowLayout.LEFT));
+        //northPanel.setPreferredSize(new Dimension(800,70));
 
         placeToolBar(toolBar);
-        topPanel.add(toolBar);
-        frame.getContentPane().add(toolBar, BorderLayout.PAGE_START);
-        //frame.add(topPanel, BorderLayout.NORTH);
+        northPanel.add(toolBar);
+        //frame.getContentPane().add(toolBar, BorderLayout.PAGE_START);
+        frame.add(northPanel, BorderLayout.NORTH);
+        //frame.add(northPanel, BorderLayout.NORTH);
 
-        // Listener สำหรับปรับขนาด NORTH ตามความสูงของหน้าต่าง
+
+        // This listener helps toolbar to be dynamically resized its height and rerendered according to the frame size
         frame.addComponentListener(new ComponentAdapter() {
             @Override
             public void componentResized(ComponentEvent e) {
@@ -82,8 +79,8 @@ public class TextEditor {
                 } else if (frameWidth <= 700) {
                     newHeight = 90;
                 } else {
-                    // ถ้าต้องการ สามารถปรับสูงแบบ linear scaling หรือใช้ default
-                    // newHeight = 70;
+                    // Linear scaling is a method of proportional adjustment or a system where the output changes proportionally to the input.
+                    // to be research
                 }
 
                 toolBar.setPreferredSize(new Dimension(frameWidth, newHeight));
@@ -92,14 +89,15 @@ public class TextEditor {
         });
 
 
-        // South Panel
-        pnSouth = new JPanel();
-        pnSouth.setPreferredSize(new Dimension(800,20));
-        frame.getContentPane().add(pnSouth, "South");
 
+        // South Panel
+        southPanel = new JPanel();
+        southPanel.setPreferredSize(new Dimension(800,20));
+        frame.getContentPane().add(southPanel, "South");
 
         // Text Area
         textArea = new JTextPane();
+        // Replace Text Area (.txt) with Text Pane (.rtf) because we want to style texts
         /*
         // textArea.setLineWrap(true);
         // textArea.setWrapStyleWord(true);
@@ -123,7 +121,6 @@ public class TextEditor {
             }
         });
          */
-        // Replace Text Area (.txt) with Text Pane (.rtf) because we want to style texts
 
         updateStyleControls();
         doc = textArea.getStyledDocument();
@@ -200,24 +197,20 @@ public class TextEditor {
         root.add(util1);
 
         JTree tree = new JTree(root);
-        // เมื่อเลือก node
+        // when select a node
         tree.addTreeSelectionListener(e -> {
             TreePath path = e.getPath();
             Object[] nodes = path.getPath();
-            StringBuilder pfad = new StringBuilder();
+            StringBuilder treePath = new StringBuilder();
 
             for (Object node : nodes) {
-                pfad.append(node.toString());
+                treePath.append(node.toString());
                 if (node != nodes[nodes.length - 1]) {
-                    pfad.append(" > ");
+                    treePath.append(" > ");
                 }
             }
-
-            lbInfo.setText("Path: " + pfad);
+            lbInfo.setText("Path: " + treePath);
         });
-
-
-
 
         JScrollPane treeScroll = new JScrollPane(tree);
         treeScroll.setPreferredSize(new Dimension(150,0));
@@ -226,7 +219,7 @@ public class TextEditor {
 
         // Function calls
         placeMenuElements(mnHauptmenue); //textArea, frame
-        placeSouthPanelElements(pnSouth); // textArea, frame
+        placeSouthPanelElements(southPanel); // textArea, frame
         frame.setVisible(true);
     }
 
@@ -235,7 +228,7 @@ public class TextEditor {
     private void updateStyleControls() {
         isUpdatingStyle = true;
 
-        // # Early Exit - if the document is empty (New File), then set styles (font name, color, size) to default, and not proceed furthur
+        // # Early Exit - if the document is empty (New File), then set styles (font name, color, size) to default, and not proceed further
         if (textArea.getDocument().getLength() == 0) {
             if (fontCombo != null) fontCombo.setSelectedItem("Arial");
             if (sizeCombo != null) sizeCombo.setSelectedItem(12);
@@ -256,22 +249,22 @@ public class TextEditor {
 
         AttributeSet as = element.getAttributes();
 
-        // อัปเดต Font
+        // to update Font Style
         String font = StyleConstants.getFontFamily(as);
         if (fontCombo != null && !font.equals(fontCombo.getSelectedItem())) {
             fontCombo.setSelectedItem(font);
         }
 
-        // อัปเดต Size
+        // to update Font Size
         int size = StyleConstants.getFontSize(as);
         if (sizeCombo != null && size != (Integer) sizeCombo.getSelectedItem()) {
             sizeCombo.setSelectedItem(size);
         }
 
-        // สามารถอัปเดตสีได้ด้วยถ้ามีปุ่มเลือกสี
+        // to update Color Button
         Color color = StyleConstants.getForeground(as);
         colorBtn.setBackground(color);
-        // ✅ เสร็จแล้วปิด flag
+
         isUpdatingStyle = false;
 
 
@@ -453,7 +446,7 @@ public class TextEditor {
         fontCombo = new JComboBox<>(fonts);
 
         fontCombo.addActionListener(e -> {
-            // ✅ ถ้ากำลังอัปเดตอยู่ ให้ข้าม
+            // Early Exit
             if (isUpdatingStyle) return;
 
             String fontName = (String) fontCombo.getSelectedItem();
@@ -474,13 +467,13 @@ public class TextEditor {
         sizeCombo = new JComboBox<>(sizes);
 
         sizeCombo.addActionListener(e -> {
-            // ✅ ถ้ากำลังอัปเดตอยู่ ให้ข้าม
+            // Early Exit
             if (isUpdatingStyle) return;
 
             int fontSize = (Integer) sizeCombo.getSelectedItem();
             int start = textArea.getSelectionStart();
             int end = textArea.getSelectionEnd();
-            if (start == end) return; // ✅ ต้องมี selection ถึงจะเปลี่ยน
+            if (start == end) return; // Early Exit, if there is no selection
 
             StyledDocument doc = textArea.getStyledDocument();
             SimpleAttributeSet style = new SimpleAttributeSet();
@@ -558,7 +551,7 @@ public class TextEditor {
         JButton btnPrint = new JButton("");
         btnPrint.addActionListener(e -> {
             try {
-                boolean complete = textArea.print(); // สั่งพิมพ์ข้อความใน JTextPane
+                boolean complete = textArea.print();
                 if (complete) {
                     JOptionPane.showMessageDialog(null, "Druckvorgang abgeschlossen", "Fertig", JOptionPane.INFORMATION_MESSAGE);
                 } else {
@@ -580,8 +573,6 @@ public class TextEditor {
         if (undoManager != null) {
             undoManager.discardAllEdits();
         }
-
-
 
         // 1. create a new StyledDocument and reassign it to the doc
         // This will NOT carry styles and undo history to the new document
@@ -693,7 +684,7 @@ public class TextEditor {
         int result = fileChooser.showSaveDialog(frame);
         if (result == JFileChooser.APPROVE_OPTION) {
             File fileToSave = fileChooser.getSelectedFile();
-            currentFile = fileToSave; // ตั้งไฟล์ปัจจุบัน
+            currentFile = fileToSave;
             saveRTFFile(fileToSave);
         }
     }
@@ -724,18 +715,14 @@ public class TextEditor {
                 rtfKit.read(fis, doc, 0);
                 textArea.setDocument(doc);
 
-                // ใส่ UndoManager ใหม่ให้กับ doc
+                // to add a new UndoManager to the new doc
                 doc.addUndoableEditListener(new UndoableEditListener() {
                     public void undoableEditHappened(UndoableEditEvent e) {
                         undoManager.addEdit(e.getEdit());
                     }
                 });
 
-                // // เพิ่ม caret listener เพื่อ update ComboBox
-                // textArea.addCaretListener(e -> updateStyleControls());
                 updateStyleControls();
-
-
 
             } catch (Exception e) {
                 JOptionPane.showMessageDialog(frame, "Fehler beim Lesen der Datei: " + e.getMessage());
@@ -830,6 +817,10 @@ public class TextEditor {
             resetTextStyle();
 
         }
+    }
+
+    public static void main(String[] args) {
+        new TextEditor(); // create the instance (here to display GUI)
     }
 
 }
